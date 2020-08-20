@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 import os
 
-
+from skimage import metrics
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -57,6 +57,7 @@ def load_features_labels_mark2(train_data, label_list, labels, train_dir, test_d
             total_index += 1
 
 
+
 def main():
     train_dir = "../fruits/Training1"
     test_dir = "../fruits/Test1"
@@ -66,78 +67,51 @@ def main():
 
     labels = listdir_nohidden(train_dir)
 
+    separate = True
+
     #first method
-    # X_train = np.ndarray((train_size, IMAGE_SIZE, IMAGE_SIZE, CHANNEL_SIZE ))
-    # Y_train = np.zeros((train_size,1))
-    #
-    # X_test = np.ndarray((test_size, IMAGE_SIZE, IMAGE_SIZE, CHANNEL_SIZE))
-    # Y_test = np.zeros((test_size,1))
+    if separate:
+        X_train = np.ndarray((train_size, IMAGE_SIZE, IMAGE_SIZE, CHANNEL_SIZE ))
+        Y_train = np.zeros((train_size,1))
 
+        X_test = np.ndarray((test_size, IMAGE_SIZE, IMAGE_SIZE, CHANNEL_SIZE))
+        Y_test = np.zeros((test_size,1))
+        load_features_labels(X_train, Y_train, labels, train_dir)
+        load_features_labels(X_test, Y_test, labels, test_dir)
+
+        shuffle_dataset(X_train)
+        shuffle_dataset(Y_train)
+        shuffle_dataset(X_test)
+        shuffle_dataset(Y_test)
+        print("shape of X_train= {}".format(X_train.shape))
+        print("shape of Y_train= {}".format(Y_train.shape))
+        d2_train_dataset = X_train.reshape((train_size, IMAGE_SIZE * IMAGE_SIZE * CHANNEL_SIZE))
+        d2_test_dataset = X_test.reshape(test_size, IMAGE_SIZE * IMAGE_SIZE * CHANNEL_SIZE)
+    else:
     #second method
-    dataset = np.ndarray((train_size + test_size, IMAGE_SIZE, IMAGE_SIZE, CHANNEL_SIZE))
-    labelset = np.ndarray((train_size + test_size,1))
-
-   # load_features_labels(X_train, Y_train, labels, train_dir)
-   # load_features_labels(X_test, Y_test, labels, test_dir)
-
-    load_features_labels_mark2(dataset, labelset, labels, train_dir, test_dir)
-
-    # shuffle_dataset(X_train)
-    # shuffle_dataset(Y_train)
-    #
-    # shuffle_dataset(X_test)
-    # shuffle_dataset(Y_test)
-
-    shuffle_dataset(dataset)
-    shuffle_dataset(labelset)
-
-    # print(Y_test[500:600])
-    # print("shape of X_train= {}".format(X_train.shape))
-    # print("shape of Y_train= {}".format(Y_train.shape))
-
-    X_train, X_test, Y_train, Y_test = train_test_split(dataset, labelset, test_size=0.25, random_state=40)
-    print(X_train.shape)
-    print(X_test.shape)
-    print(Y_train.shape)
-    print(Y_test.shape)
-
-   # d2_train_dataset = X_train.reshape((train_size , IMAGE_SIZE * IMAGE_SIZE * CHANNEL_SIZE))
-    d2_train_dataset = X_train.reshape((X_train.shape[0] , IMAGE_SIZE * IMAGE_SIZE * CHANNEL_SIZE))
-#    d2_test_dataset = X_test.reshape(test_size, IMAGE_SIZE * IMAGE_SIZE * CHANNEL_SIZE)
-    d2_test_dataset = X_test.reshape((X_test.shape[0], IMAGE_SIZE * IMAGE_SIZE * CHANNEL_SIZE))
+        dataset = np.ndarray((train_size + test_size, IMAGE_SIZE, IMAGE_SIZE, CHANNEL_SIZE))
+        labelset = np.ndarray((train_size + test_size,1))
+        load_features_labels_mark2(dataset, labelset, labels, train_dir, test_dir)
+        shuffle_dataset(dataset)
+        shuffle_dataset(labelset)
+        X_train, X_test, Y_train, Y_test = train_test_split(dataset, labelset, test_size=0.25, random_state=40)
+        d2_train_dataset = X_train.reshape((X_train.shape[0] , IMAGE_SIZE * IMAGE_SIZE * CHANNEL_SIZE))
+        d2_test_dataset = X_test.reshape((X_test.shape[0], IMAGE_SIZE * IMAGE_SIZE * CHANNEL_SIZE))
 
 
     clf = make_pipeline(StandardScaler(), SVC(kernel="linear", verbose=True, gamma=0.001))
     clf.fit(d2_train_dataset, Y_train.ravel())
     clf.score(d2_test_dataset, Y_test)
-    scores = cross_val_score(clf, d2_train_dataset, Y_test, cv=5)
+    scores = cross_val_score(clf, d2_train_dataset, Y_train, cv=5)
     print(scores)
-    # y_predict = clf.predict(d2_test_dataset)
-    # print("Accuracy:", metrics.accuracy_score(Y_test, y_predict))
-    # print(metrics.confusion_matrix(y_true=Y_test, y_pred=y_predict))
-    # print("Predicted values", y_predict[1100:1110])
-    # print("Test values\n", Y_test[1100:1110])
+    y_predict = clf.predict(d2_test_dataset)
+
+    print("Accuracy:", metrics.accuracy_score(Y_test, y_predict))
+    print(metrics.confusion_matrix(y_true=Y_test, y_pred=y_predict))
+    print("Predicted values", y_predict[1100:1110])
+    print("Test values\n", Y_test[1100:1110])
 
 
 if __name__ == "__main__":
     main()
 
-
-
-
-#
-
-# nsamples, nx, ny, nz = X_train.shape
-# d2_train_dataset = X_train.reshape((nsamples, nx * ny * nz))
-# print("shape of X_train= ", d2_train_dataset.shape)
-# x_train, x_test, y_train, y_test = train_test_split(d2_train_dataset, Y_train, test_size=0.3, random_state=40)
-# clf = svm.SVC(kernel='linear')
-# clf.fit(x_train, y_train)
-# y_predict = clf.predict(x_test)
-# print("Accuracy:", metrics.accuracy_score(y_test, y_predict))
-# print(metrics.confusion_matrix(y_true=y_test, y_pred=y_predict))
-# print("Predicted values", y_predict[1400:1406])
-# print("Test values\n", y_test[1400:1406])
-# for i in label_train:
-#     plt.imshow(y_predict[i])
-#     plt.show()
