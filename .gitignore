@@ -14,6 +14,8 @@ dist/
 downloads/
 data/
 image_dataset/
+fruits/
+.idea/
 eggs/
 .eggs/
 lib/
