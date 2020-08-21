@@ -2,14 +2,14 @@
 import numpy as np
 import cv2
 import os
-
-from skimage import metrics
+import matplotlib.pyplot as plt
+from sklearn import metrics
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from sklearn.model_selection import cross_val_score
-
+from sklearn.neighbors import KNeighborsClassifier
 from util.dir_utils import listdir_nohidden
 
 IMAGE_SIZE = 100
@@ -19,6 +19,9 @@ SEED = 12345
 def shuffle_dataset(dataset):
     np.random.seed(SEED)
     np.random.shuffle(dataset)
+def index_to_label(labels, index):
+    return labels[int(index)]
+
 
 def calculate_dataset_size(data_dir):
     labels = listdir_nohidden(data_dir)
@@ -98,19 +101,25 @@ def main():
         d2_train_dataset = X_train.reshape((X_train.shape[0] , IMAGE_SIZE * IMAGE_SIZE * CHANNEL_SIZE))
         d2_test_dataset = X_test.reshape((X_test.shape[0], IMAGE_SIZE * IMAGE_SIZE * CHANNEL_SIZE))
 
+    knn = KNeighborsClassifier(n_neighbors=5)
+    knn.fit(d2_train_dataset, Y_train)
+    y_predict = knn.predict(d2_test_dataset)
+   # clf = make_pipeline(StandardScaler(), SVC(kernel="linear", gamma=0.001))
+    #clf.fit(d2_train_dataset, Y_train.ravel())
 
-    clf = make_pipeline(StandardScaler(), SVC(kernel="linear", verbose=True, gamma=0.001))
-    clf.fit(d2_train_dataset, Y_train.ravel())
-    clf.score(d2_test_dataset, Y_test)
-    scores = cross_val_score(clf, d2_train_dataset, Y_train, cv=5)
-    print(scores)
-    y_predict = clf.predict(d2_test_dataset)
-
+    #if not separate:
+     #   clf.score(d2_test_dataset, Y_test)
+      #  scores = cross_val_score(clf, d2_train_dataset, Y_train, cv=5)
+      #  print(scores)
+   # else:
+       # y_predict = clf.predict(d2_test_dataset)
     print("Accuracy:", metrics.accuracy_score(Y_test, y_predict))
     print(metrics.confusion_matrix(y_true=Y_test, y_pred=y_predict))
     print("Predicted values", y_predict[1100:1110])
     print("Test values\n", Y_test[1100:1110])
-
+    plt.title('Predicted fruit: {0}'.format(index_to_label(labels, y_predict[23])))
+    plt.imshow(X_test[23] / 255, interpolation='nearest')
+    plt.show()
 
 if __name__ == "__main__":
     main()
